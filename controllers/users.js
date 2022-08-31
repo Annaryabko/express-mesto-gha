@@ -16,7 +16,13 @@ module.exports.getUserbyId = (req, res) => {
         res.status(NOT_FOUND_ERROR).send({ message: 'Пользователь по указанному _id не найден.' });
       }
     })
-    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка' }));
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные при запросе пользователя.' });
+      } else {
+        res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка' });
+      }
+    });
 };
 
 module.exports.createUser = (req, res) => {
