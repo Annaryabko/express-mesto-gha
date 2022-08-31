@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const userRouter = require('./routes/users');
 const cardsRouter = require('./routes/cards');
+const { NOT_FOUND_ERROR } = require('./errors');
 
 const app = express();
 
@@ -25,6 +26,10 @@ app.use((req, res, next) => {
 
 app.use('/users', userRouter);
 app.use('/cards', cardsRouter);
+
+app.use((req, res) => {
+  res.status(NOT_FOUND_ERROR).send({ message: 'Страница не найдена.' });
+});
 
 app.listen(PORT, () => {
   // Если всё работает, консоль покажет, какой порт приложение слушает
