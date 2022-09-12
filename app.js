@@ -6,9 +6,9 @@ const { celebrate, Joi, errors } = require('celebrate');
 const userRouter = require('./routes/users');
 const cardsRouter = require('./routes/cards');
 const { auth } = require('./middlewares/auth');
-const { NOT_FOUND_ERROR } = require('./errors/statuscodes');
 const { login, createUser } = require('./controllers/users');
 const errorHandler = require('./middlewares/error');
+const NotFoundError = require('./errors/notfound');
 
 const app = express();
 
@@ -48,8 +48,8 @@ app.use(auth);
 app.use('/users', userRouter);
 app.use('/cards', cardsRouter);
 
-app.use((req, res) => {
-  res.status(NOT_FOUND_ERROR).send({ message: 'Страница не найдена.' });
+app.use((req, res, next) => {
+  next(new NotFoundError('Страница не найдена'));
 });
 
 app.use(errors());

@@ -1,6 +1,5 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const validator = require('validator');
 const BadRequestError = require('../errors/badrequest');
 const ConflictError = require('../errors/conflict');
 const NotFoundError = require('../errors/notfound');
@@ -46,29 +45,26 @@ module.exports.createUser = (req, res, next) => {
   const {
     name, about, avatar, email, password,
   } = req.body;
-  if (validator.isEmail(email)) {
-    bcrypt.hash(password, 10)
-      .then((hashedPassword) => {
-        User.create({
-          name, about, avatar, email, password: hashedPassword,
-        })
-          .then((user) => res.send({ data: user }))
-          .catch((err) => {
-            if (err.name === 'ValidationError') {
-              next(new BadRequestError('Переданы некорректные данные при создании пользователя'));
-            } else if (err.code === 11000) {
-              next(new ConflictError('Такой мейл уже есть в базе'));
-            } else {
-              next(new ServerError('Произошла ошибка'));
-            }
-          });
+
+  bcrypt.hash(password, 10)
+    .then((hashedPassword) => {
+      User.create({
+        name, about, avatar, email, password: hashedPassword,
       })
-      .catch(() => {
-        next(new ServerError('Произошла ошибка'));
-      });
-  } else {
-    next(new ServerError('Мейл написан неверно'));
-  }
+        .then((user) => res.send({ data: user }))
+        .catch((err) => {
+          if (err.name === 'ValidationError') {
+            next(new BadRequestError('Переданы некорректные данные при создании пользователя'));
+          } else if (err.code === 11000) {
+            next(new ConflictError('Такой мейл уже есть в базе'));
+          } else {
+            next(new ServerError('Произошла ошибка'));
+          }
+        });
+    })
+    .catch(() => {
+      next(new ServerError('Произошла ошибка'));
+    });
 };
 
 module.exports.updateUser = (req, res, next) => {
@@ -120,24 +116,26 @@ module.exports.login = (req, res, next) => {
   User.findOne({ email })
     .select('+password')
     .then((user) => {
-      bcrypt.compare(password, user.password)
-        .then((isUserValid) => {
-          if (isUserValid) {
-            const token = jwt.sign({
-              _id: user._id,
-            }, 'mysecret');
-            res.cookie('jwt', token, {
-              maxAge: 3600000,
-              httpOnly: true,
-              sameSite: true,
-            });
-            res.send({ data: user.toJSON() });
-          } else {
-            next(new UnauthorisedError('Неправильный логин или пароль'));
-          }
-        });
+      if (user) {
+        bcrypt.compare(password, user.password)
+          .then((isUserValid) => {
+            if (isUserValid) {
+              const token = jwt.sign({
+                _id: user._id,
+              }, 'mysecret');
+              res.cookie('jwt', token, {
+                maxAge: 3600000,
+                httpOnly: true,
+                sameSite: true,
+              });
+              res.send({ data: user.toJSON() });
+            } else {
+              next(new UnauthorisedError('Неправильный логин или пароль'));
+            }
+          });
+      } else {
+        next(new UnauthorisedError('Неправильный логин или пароль'));
+      }
     })
-    .catch(() => {
-      next(new UnauthorisedError('Неправильный логин или пароль'));
-    });
+    .catch(next);
 };

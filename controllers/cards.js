@@ -33,15 +33,18 @@ module.exports.deleteCard = (req, res, next) => {
           .then(() => {
             res.send({ data: card });
           })
-          .catch((err) => {
-            if (err.name === 'CastError') {
-              next(new BadRequestError('Переданы некорректные данные при удалении карточки'));
-            } else {
-              next(new ServerError('Произошла ошибка'));
-            }
+          .catch(() => {
+            next(new ServerError('Произошла ошибка'));
           });
       } else {
         next(new ForbiddenError('Карточка не Ваша и ее не удалить Вам'));
+      }
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequestError('Переданы некорректные данные при удалении карточки'));
+      } else {
+        next(new ServerError('Произошла ошибка'));
       }
     });
 };
