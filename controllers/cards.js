@@ -2,6 +2,7 @@ const Card = require('../models/card');
 const ServerError = require('../errors/servererror');
 const BadRequestError = require('../errors/badrequest');
 const NotFoundError = require('../errors/notfound');
+const ForbiddenError = require('../errors/forbidden');
 
 module.exports.listCards = (req, res, next) => {
   Card.find({})
@@ -40,7 +41,7 @@ module.exports.deleteCard = (req, res, next) => {
             }
           });
       } else {
-        next(new ServerError('Карточка не Ваша и ее не удалить Вам'));
+        next(new ForbiddenError('Карточка не Ваша и ее не удалить Вам'));
       }
     });
 };
